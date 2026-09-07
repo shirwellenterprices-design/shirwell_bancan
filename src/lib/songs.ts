@@ -67,6 +67,9 @@ export const WITHOUT_YOUR_LOVE_AUDIO_PATH = "/audio/without-your-love.mp3";
 /** `1000-minutes apart` */
 export const ONE_THOUSAND_MINUTES_APART_AUDIO_PATH = "/audio/1000_minutes_apart.mp3";
 
+/** `Janie Howard` */
+export const JANIE_HOWARD_AUDIO_PATH = "/audio/janie-howard.m4a";
+
 /** `Lily the Dancing Machine` — rock version (Rock Turbo Mix) */
 export const DANCING_MACHINE_ROCK_AUDIO_PATH =
   "/audio/lily-the-dancing-machine-rock-turbo-mix.mp3";
@@ -113,6 +116,8 @@ function applyWrittenYears(songs: Song[]): Song[] {
               : t === "rock-n-roll roll" || t.startsWith("rock-n-roll roll")
                 ? 2025
               : t === "crazy 1" || t.startsWith("crazy 1")
+                ? 2025
+              : t === "janie howard" || t.startsWith("janie howard")
                 ? 2025
               : t === "baby gonna rock" || t.startsWith("baby gonna rock")
                 ? 2025
@@ -275,6 +280,16 @@ export const FALLBACK_SONGS: Song[] = [
     desc: "Shirwell Bancan",
     year: 2026,
     audio_url: ONE_THOUSAND_MINUTES_APART_AUDIO_PATH,
+    cover_image: null,
+    is_premium: false,
+  },
+  {
+    id: "fallback-janie-howard",
+    title: "Janie Howard",
+    artist: "Written by Shirwell Bancan",
+    desc: "Shirwell Bancan",
+    year: 2025,
+    audio_url: JANIE_HOWARD_AUDIO_PATH,
     cover_image: null,
     is_premium: false,
   },
@@ -754,6 +769,27 @@ function ensureBundledTracksInList(songs: Song[]): Song[] {
       ...result,
     ];
   }
+
+  function isJanieHowardTrack(title: string | null | undefined): boolean {
+    const t = normalizeTitle(title);
+    return t === "janie howard" || t.startsWith("janie howard");
+  }
+  if (!result.some((s) => isJanieHowardTrack(s.title))) {
+    result = [
+      {
+        id: "bundled-janie-howard",
+        title: "Janie Howard",
+        artist: "Written by Shirwell Bancan",
+        desc: "Shirwell Bancan",
+        year: 2025,
+        audio_url: JANIE_HOWARD_AUDIO_PATH,
+        cover_image: null,
+        is_premium: false,
+      },
+      ...result,
+    ];
+  }
+
   function isBabyGonnaRockTrack(title: string | null | undefined): boolean {
     const t = normalizeTitle(title);
     return t === "Baby Gonna Rock" || t.startsWith("Baby Gonna Rock");
