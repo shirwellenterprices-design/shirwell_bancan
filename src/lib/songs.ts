@@ -67,8 +67,12 @@ export const WITHOUT_YOUR_LOVE_AUDIO_PATH = "/audio/without-your-love.mp3";
 /** `1000-minutes apart` */
 export const ONE_THOUSAND_MINUTES_APART_AUDIO_PATH = "/audio/1000_minutes_apart.mp3";
 
-/** `Janie Howard` */
+/** `Janie Howard longest mix voice` */
 export const JANIE_HOWARD_AUDIO_PATH = "/audio/janie-howard.m4a";
+export const JANIE_HOWARD_DISPLAY_TITLE = "Janie Howard longest mix voice";
+
+/** `2 Boys` */
+export const TWO_BOYS_AUDIO_PATH = "/audio/2-boys.mp3";
 
 /** `Lily the Dancing Machine` — rock version (Rock Turbo Mix) */
 export const DANCING_MACHINE_ROCK_AUDIO_PATH =
@@ -118,6 +122,8 @@ function applyWrittenYears(songs: Song[]): Song[] {
               : t === "crazy 1" || t.startsWith("crazy 1")
                 ? 2025
               : t === "janie howard" || t.startsWith("janie howard")
+                ? 2025
+              : t === "2 boys" || t.startsWith("2 boys") || t === "two boys"
                 ? 2025
               : t === "baby gonna rock" || t.startsWith("baby gonna rock")
                 ? 2025
@@ -285,11 +291,21 @@ export const FALLBACK_SONGS: Song[] = [
   },
   {
     id: "fallback-janie-howard",
-    title: "Janie Howard",
+    title: JANIE_HOWARD_DISPLAY_TITLE,
     artist: "Written by Shirwell Bancan",
     desc: "Shirwell Bancan",
     year: 2025,
     audio_url: JANIE_HOWARD_AUDIO_PATH,
+    cover_image: null,
+    is_premium: false,
+  },
+  {
+    id: "fallback-2-boys",
+    title: "2 Boys",
+    artist: "Written by Shirwell Bancan",
+    desc: "Shirwell Bancan",
+    year: 2025,
+    audio_url: TWO_BOYS_AUDIO_PATH,
     cover_image: null,
     is_premium: false,
   },
@@ -377,9 +393,11 @@ export const getSongs = cache(async function getSongs(): Promise<Song[]> {
       applyBundledComeOnBabeAudio(
         applyBundledKissingAudio(
           applyBundledNeverBeTheSameAudio(
-            applyBundledGloriousDaysDemos(
-              applyBundledDancingMachineAudio(
-                applyBundledRideTheNightAwayAudio(mapped)
+            applyBundledJanieHowardAudio(
+              applyBundledGloriousDaysDemos(
+                applyBundledDancingMachineAudio(
+                  applyBundledRideTheNightAwayAudio(mapped)
+                )
               )
             )
           )
@@ -489,6 +507,24 @@ function applyBundledNeverBeTheSameAudio(songs: Song[]): Song[] {
           ...s,
           title: "Never Be The Same",
           audio_url: NEVER_BE_THE_SAME_AUDIO_PATH,
+        }
+      : s
+  );
+}
+
+function isJanieHowardTrack(title: string | null | undefined): boolean {
+  const t = normalizeTitle(title);
+  return t === "janie howard" || t.startsWith("janie howard");
+}
+
+/** Bundled longest mix voice for Janie Howard */
+function applyBundledJanieHowardAudio(songs: Song[]): Song[] {
+  return songs.map((s) =>
+    isJanieHowardTrack(s.title)
+      ? {
+          ...s,
+          title: JANIE_HOWARD_DISPLAY_TITLE,
+          audio_url: JANIE_HOWARD_AUDIO_PATH,
         }
       : s
   );
@@ -770,19 +806,35 @@ function ensureBundledTracksInList(songs: Song[]): Song[] {
     ];
   }
 
-  function isJanieHowardTrack(title: string | null | undefined): boolean {
-    const t = normalizeTitle(title);
-    return t === "janie howard" || t.startsWith("janie howard");
-  }
   if (!result.some((s) => isJanieHowardTrack(s.title))) {
     result = [
       {
         id: "bundled-janie-howard",
-        title: "Janie Howard",
+        title: JANIE_HOWARD_DISPLAY_TITLE,
         artist: "Written by Shirwell Bancan",
         desc: "Shirwell Bancan",
         year: 2025,
         audio_url: JANIE_HOWARD_AUDIO_PATH,
+        cover_image: null,
+        is_premium: false,
+      },
+      ...result,
+    ];
+  }
+
+  function isTwoBoysTrack(title: string | null | undefined): boolean {
+    const t = normalizeTitle(title);
+    return t === "2 boys" || t.startsWith("2 boys") || t === "two boys";
+  }
+  if (!result.some((s) => isTwoBoysTrack(s.title))) {
+    result = [
+      {
+        id: "bundled-2-boys",
+        title: "2 Boys",
+        artist: "Written by Shirwell Bancan",
+        desc: "Shirwell Bancan",
+        year: 2025,
+        audio_url: TWO_BOYS_AUDIO_PATH,
         cover_image: null,
         is_premium: false,
       },
