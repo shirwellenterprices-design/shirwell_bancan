@@ -15,7 +15,10 @@ import { AdSenseRouteFill } from "@/components/ads/adsense-route-fill";
 import { AdSenseScriptWatcher } from "@/components/ads/adsense-script-watcher";
 import { GoogleAdsPageViewConversion } from "@/components/analytics/google-ads-page-view-conversion";
 import { GoogleAnalyticsPageViews } from "@/components/analytics/google-analytics-page-views";
-import { GoogleTagManagerNoScript } from "@/components/analytics/google-tag-manager";
+import {
+  GoogleTagManagerHead,
+  GoogleTagManagerNoScript,
+} from "@/components/analytics/google-tag-manager";
 import { ThirdPartyScripts } from "@/components/third-party/third-party-scripts";
 import { LazyAiSupportChat } from "@/components/support/lazy-ai-support-chat";
 import { AppleMusicMiniPlayer } from "@/components/shirwell/apple-music-mini-player";
@@ -59,17 +62,18 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${playfair.variable} h-full antialiased`}
     >
       <head>
+        <GoogleTagManagerHead />
         <GoogleSiteVerificationMeta />
         <AdSenseAccountMeta />
         <AdBlockingRecoveryHead />
         <AdSenseHeadScript />
       </head>
       <body className="min-h-full font-sans">
+        <GoogleTagManagerNoScript />
         <ThirdPartyScripts />
         <AdMobNativeProvider />
         <AdSenseScriptWatcher />
         <AdSenseRouteFill />
-        <GoogleTagManagerNoScript />
         <GoogleAnalyticsPageViews />
         <GoogleAdsPageViewConversion />
         <JsonLdScript data={getOrganizationWebsiteJsonLd(siteUrl)} />
