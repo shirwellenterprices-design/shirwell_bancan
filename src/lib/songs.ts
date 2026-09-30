@@ -1,0 +1,980 @@
+import { cache } from "react";
+import type { Song } from "@/types/song";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import {
+  MUSIC_VIDEO_BUCKET,
+  resolvePublicStorageUrl,
+} from "@/lib/supabase/storage";
+
+/** Bundled `Kissing 240227_04 .mp3` */
+export const KISSING_AUDIO_PATH = "/audio/kissing-240227.mp3";
+
+/** `Come on Babe_V4_L2.wav` */
+//export const COME_ON_BABE_AUDIO_PATH = "/audio/come-on-babe-v4-l2.wav";
+
+/** `Come on Babe_L2_V5.wav` (Version 2 — louder) */
+export const COME_ON_BABE_V2_LOUDER_AUDIO_PATH =
+  "/audio/come-on-babe-v2-louder.wav";
+
+/** Bundled copy of `I Want To Run Away_240225_V2-2.wav` */
+export const RUN_AWAY_AUDIO_PATH = "/audio/i-want-to-run-away.wav";
+
+/** `Ride the Night Away (Thunderline Vocal Mix)` */
+export const RIDE_THE_NIGHT_AWAY_AUDIO_PATH =
+  "/audio/ride-the-night-away-thunderline-vocal-mix.mp3";
+
+/** `Never Be The Same` */
+export const NEVER_BE_THE_SAME_AUDIO_PATH = "/audio/never-be-the-same.mp3";
+
+
+/** `Hay girls guy voice` */
+export const HAY_GIRLS_GUY_VOICE_AUDIO_PATH = "/audio/hay-girls-guy-voice.mp3";
+
+/** `Glorious Days — Echoes of the Don` */
+export const GLORIOUS_DAYS_ECHOES_OF_THE_DON_AUDIO_PATH =
+  "/audio/glorious-days-echoes-of-the-don.mp3";
+
+/** `Glorious Days — girls singing two` */
+export const GLORIOUS_DAYS_GIRLS_SINGING_TWO_AUDIO_PATH =
+  "/audio/glorious-days-girls-singing-two.mp3";
+
+/** `Glorious Days — male vocal` */
+export const GLORIOUS_DAYS_MALE_VOCAL_AUDIO_PATH =
+  "/audio/glorious-days-male-vocal.mp3";
+
+export const GLORIOUS_DAYS_ECHOES_DISPLAY_TITLE =
+  "Glorious Days (Echoes of the Don)";
+export const GLORIOUS_DAYS_GIRLS_DISPLAY_TITLE =
+  "Glorious Days (Girls Singing Two)";
+export const GLORIOUS_DAYS_MALE_VOCAL_DISPLAY_TITLE =
+  "Glorious Days (Male Vocal)";
+
+/** @deprecated Use GLORIOUS_DAYS_ECHOES_DISPLAY_TITLE */
+export const GLORIOUS_DAYS_DISPLAY_TITLE = GLORIOUS_DAYS_ECHOES_DISPLAY_TITLE;
+
+/** `Baby Gonna Rock` */
+export const BABY_GONNA_ROCK_AUDIO_PATH = "/audio/Baby_gonna_Rock.mp3"
+
+/** `Crazy ` */
+export const CRAZY_1_AUDIO_PATH = "/audio/crazy.mp3";
+
+/** `Rock-n-Roll Roll ` */
+export const ROCK_N_ROLL_ROLL_AUDIO_PATH = "/audio/rock-n-roll-roll.mp3";
+
+/** `Without Your Love` */
+export const WITHOUT_YOUR_LOVE_AUDIO_PATH = "/audio/without-your-love.mp3";
+
+/** `1000-minutes apart` */
+export const ONE_THOUSAND_MINUTES_APART_AUDIO_PATH = "/audio/1000_minutes_apart.mp3";
+
+/** `Janie Howard longest mix voice` */
+export const JANIE_HOWARD_AUDIO_PATH = "/audio/janie-howard.m4a";
+export const JANIE_HOWARD_DISPLAY_TITLE = "Janie Howard longest mix voice";
+
+/** `2 Boys` */
+export const TWO_BOYS_AUDIO_PATH = "/audio/2-boys.mp3";
+
+/** `Lily the Dancing Machine` — rock version (Rock Turbo Mix) */
+export const DANCING_MACHINE_ROCK_AUDIO_PATH =
+  "/audio/lily-the-dancing-machine-rock-turbo-mix.mp3";
+
+/** `Dancing Machine` — dance version (Turbo Club Mix) */
+export const DANCING_MACHINE_DANCE_AUDIO_PATH =
+  "/audio/dancing-machine-turbo-club-mix.mp3";
+
+/** Credit when AI tools assisted production */
+export const AI_NEEDED_LABEL = "AI needed";
+
+export const ROCK_VERSION_LABEL = "Rock version";
+export const DANCE_VERSION_LABEL = "Dance version";
+export const DEMONSTRATION_LABEL = "Demonstration";
+
+
+
+ 
+
+function normalizeTitle(title: string | null | undefined): string {
+  return (title ?? "").trim().toLowerCase();
+}
+
+function applyWrittenYears(songs: Song[]): Song[] {
+  return songs.map((s) => {
+    const t = normalizeTitle(s.title);
+    // User-provided correct dates:
+    // - Kissing (sometimes mistyped as "pissing") written 2024
+    // - I Want to Run Away written 2025
+    // - Come on babe (all versions) written 1979
+    const forcedYear =
+      t === "kissing" || t === "pissing"
+        ? 2024
+        : t === "i want to run away" || t === "i want to runaway"
+          ? 2025
+          : t === "1000 minutes apart" || t.startsWith("1000 minutes apart")
+            ? 2025
+          : t === "ride the night away" || t.startsWith("ride the night away")
+            ? 2025
+            : t === "never be the same" || t.startsWith("never be the same")
+              ? 2025
+              : t === "without your love" || t.startsWith("without your love")
+                ? 2025
+              : t === "rock-n-roll roll" || t.startsWith("rock-n-roll roll")
+                ? 2025
+              : t === "crazy 1" || t.startsWith("crazy 1")
+                ? 2025
+              : t === "janie howard" || t.startsWith("janie howard")
+                ? 2025
+              : t === "2 boys" || t.startsWith("2 boys") || t === "two boys"
+                ? 2025
+              : t === "baby gonna rock" || t.startsWith("baby gonna rock")
+                ? 2025
+              : t === "hay girls guy voice" || t.startsWith("hay girls guy voice")
+                ? 2025
+              : t === "glorious days" ||
+                  t.startsWith("glorious days")
+                ? 2026
+              : t === "the dancing machine" ||
+                  t.startsWith("the dancing machine") ||
+                  t === "dancing machine" ||
+                  t.startsWith("dancing machine") ||
+                  t === "lily the dancing machine" ||
+                  t.startsWith("lily the dancing machine")
+                ? 2025
+                : t === "how could i find someone like you" ||
+                    t.startsWith("how could i find someone like you")
+                  ? 2025
+                
+          
+            : null;
+
+    if (!forcedYear) return s;
+    return { ...s, year: forcedYear };
+  });
+}
+
+/** Site-wide demo mode — every track shows “Demonstration” in the player. */
+function applyDemonstrationLabels(songs: Song[]): Song[] {
+  return songs.map((s) => ({ ...s, desc: DEMONSTRATION_LABEL }));
+}
+
+export const FALLBACK_SONGS: Song[] = [
+  {
+    id: "fallback-1",
+    title: "Kissing",
+    artist: "Written by Shirwell Bancan",
+    desc: "Shirwell Bancan",
+    year: 2024,
+    audio_url: KISSING_AUDIO_PATH,
+    cover_image: null,
+    is_premium: false,
+  },
+  {
+    id: "fallback-2",
+    title: "I Want to Run Away",
+    artist: "Written by Shirwell Bancan",
+    desc: "Shirwell Bancan",
+    year: 2025,
+    audio_url: RUN_AWAY_AUDIO_PATH,
+    cover_image: null,
+    is_premium: false,
+  },
+
+  {
+    id: "fallback-4",
+    title: "Come on babe (Version 2 — louder)",
+    artist: "Written by Shirwell Bancan",
+    desc: "Shirwell Bancan",
+    year: 1979,
+    audio_url: COME_ON_BABE_V2_LOUDER_AUDIO_PATH,
+    cover_image: null,
+    is_premium: false,
+  },
+  {
+    id: "fallback-5",
+    title: "Black Horse",
+    artist: "Written by Shirwell Bancan",
+    desc: "Shirwell Bancan",
+    year: 1990,
+    audio_url: RIDE_THE_NIGHT_AWAY_AUDIO_PATH,
+    cover_image: null,
+    is_premium: false,
+  },
+  {
+    id: "fallback-6",
+    title: "Never Be The Same",
+    artist: "Written by Shirwell Bancan",
+    desc: "Shirwell Bancan",
+    year: 2026,
+    audio_url: NEVER_BE_THE_SAME_AUDIO_PATH,
+    cover_image: null,
+    is_premium: false,
+  },
+  {
+    id: "fallback-7",
+    title: "Hay girls guy voice",
+    artist: "Written by Shirwell Bancan",
+    desc: "Shirwell Bancan",
+    year: 2026,
+    audio_url: HAY_GIRLS_GUY_VOICE_AUDIO_PATH,
+    cover_image: null,
+    is_premium: false,
+  },
+  {
+    id: "fallback-glorious-days-echoes-of-the-don",
+    title: GLORIOUS_DAYS_ECHOES_DISPLAY_TITLE,
+    artist: "Written by Shirwell Bancan",
+    desc: DEMONSTRATION_LABEL,
+    year: 2026,
+    audio_url: GLORIOUS_DAYS_ECHOES_OF_THE_DON_AUDIO_PATH,
+    cover_image: null,
+    is_premium: false,
+  },
+  {
+    id: "fallback-glorious-days-girls-singing-two",
+    title: GLORIOUS_DAYS_GIRLS_DISPLAY_TITLE,
+    artist: "Written by Shirwell Bancan",
+    desc: DEMONSTRATION_LABEL,
+    year: 2026,
+    audio_url: GLORIOUS_DAYS_GIRLS_SINGING_TWO_AUDIO_PATH,
+    cover_image: null,
+    is_premium: false,
+  },
+  {
+    id: "fallback-glorious-days-male-vocal",
+    title: GLORIOUS_DAYS_MALE_VOCAL_DISPLAY_TITLE,
+    artist: "Written by Shirwell Bancan",
+    desc: DEMONSTRATION_LABEL,
+    year: 2026,
+    audio_url: GLORIOUS_DAYS_MALE_VOCAL_AUDIO_PATH,
+    cover_image: null,
+    is_premium: false,
+  },
+  {
+    id: "fallback-8",
+    title: "Baby Gonna Rock",
+    artist: "Written by Shirwell Bancan",
+    desc: "Shirwell",
+    year: 1980,
+    audio_url: BABY_GONNA_ROCK_AUDIO_PATH,
+    cover_image: null,
+    is_premium: false,
+  },
+  {
+    id: "fallback-9",
+    title: "Crazy 1",
+    artist: "Written by Shirwell Bancan",
+    desc: "Shirwell Bancan",
+    year: 2026,
+    audio_url: CRAZY_1_AUDIO_PATH,
+    cover_image: null,
+    is_premium: false,
+  },
+
+  {
+    id: "fallback-11",
+    title: "Without YourLove",
+    artist: "Written by Shirwell Bancan",
+    desc: "Shirwell Bancan",
+    year: 2026,
+    audio_url: WITHOUT_YOUR_LOVE_AUDIO_PATH,
+    cover_image: null,
+    is_premium: false,
+  },
+  {
+    id: "fallback-12",
+    title: "1000 Minutes Apart",
+    artist: "Written by Shirwell Bancan",
+    desc: "Shirwell Bancan",
+    year: 2026,
+    audio_url: ONE_THOUSAND_MINUTES_APART_AUDIO_PATH,
+    cover_image: null,
+    is_premium: false,
+  },
+  {
+    id: "fallback-janie-howard",
+    title: JANIE_HOWARD_DISPLAY_TITLE,
+    artist: "Written by Shirwell Bancan",
+    desc: "Shirwell Bancan",
+    year: 2025,
+    audio_url: JANIE_HOWARD_AUDIO_PATH,
+    cover_image: null,
+    is_premium: false,
+  },
+  {
+    id: "fallback-2-boys",
+    title: "2 Boys",
+    artist: "Written by Shirwell Bancan",
+    desc: "Shirwell Bancan",
+    year: 2025,
+    audio_url: TWO_BOYS_AUDIO_PATH,
+    cover_image: null,
+    is_premium: false,
+  },
+  {
+    id: "fallback-dancing-machine-rock",
+    title: "Lily the Dancing Machine",
+    artist: "Written by Shirwell Bancan",
+    desc: ROCK_VERSION_LABEL,
+    year: 2019,
+    audio_url: DANCING_MACHINE_ROCK_AUDIO_PATH,
+    cover_image: null,
+    is_premium: false,
+  },
+  {
+    id: "fallback-dancing-machine-dance",
+    title: "Dancing Machine (Turbo Club Mix)",
+    artist: "Written by Shirwell Bancan",
+    desc: DANCE_VERSION_LABEL,
+    year: 2025,
+    audio_url: DANCING_MACHINE_DANCE_AUDIO_PATH,
+    cover_image: null,
+    is_premium: false,
+  },
+
+ 
+];
+
+type SongRow = {
+  id: string;
+  title: string | null;
+  artist: string | null;
+  desc:string |null;
+  year: number | null;
+  audio_url: string | null;
+  cover_image: string | null;
+  is_premium: boolean | null;
+  created_at?: string | null;
+};
+
+function mapRowToSong(
+  supabaseUrl: string,
+  row: SongRow
+): Song {
+  return {
+    id: row.id,
+    title: row.title,
+    artist: row.artist,
+    desc: row.desc,
+    year: row.year,
+    audio_url: resolvePublicStorageUrl(
+      supabaseUrl,
+      MUSIC_VIDEO_BUCKET,
+      row.audio_url
+    ),
+    cover_image: resolvePublicStorageUrl(
+      supabaseUrl,
+      MUSIC_VIDEO_BUCKET,
+      row.cover_image
+    ),
+    is_premium: row.is_premium,
+    created_at: row.created_at ?? null,
+  };
+}
+
+export const getSongs = cache(async function getSongs(): Promise<Song[]> {
+  const supabase = await createServerSupabaseClient();
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+  if (!supabase || !url) return applyDemonstrationLabels(applyWrittenYears(FALLBACK_SONGS));
+
+  const { data, error } = await supabase
+    .from("songs")
+    .select(
+      "id, title, desc, artist, year, audio_url, cover_image, is_premium, created_at"
+    )
+    .order("created_at", { ascending: false });
+
+  if (error || !data?.length) {
+    return applyDemonstrationLabels(applyWrittenYears(FALLBACK_SONGS));
+  }
+
+  const mapped = (data as SongRow[]).map((row) => mapRowToSong(url, row));
+  const normalized = ensureBundledTracksInList(
+    applyBundledRunAwayAudio(
+      applyBundledComeOnBabeAudio(
+        applyBundledKissingAudio(
+          applyBundledNeverBeTheSameAudio(
+            applyBundledJanieHowardAudio(
+              applyBundledGloriousDaysDemos(
+                applyBundledDancingMachineAudio(
+                  applyBundledRideTheNightAwayAudio(mapped)
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+  );
+  return applyDemonstrationLabels(applyWrittenYears(normalized));
+});
+
+const DISPLAY_TITLE_KISSING = "Kissing";
+const DISPLAY_TITLE_COME_ON_BABE_V2 = "Come on babe (Version 2 — louder)";
+
+
+
+
+/** “Kissing” / legacy alias → bundled MP3 */
+function isKissingBundleTrack(title: string | null | undefined): boolean {
+  const t = normalizeTitle(title);
+  return t === "kissing" || t === "lovely forever";
+}
+
+function isComeOnBabeTrack(title: string | null | undefined): boolean {
+  const t = normalizeTitle(title);
+  return t === "come on babe";
+}
+
+function isComeOnBabeV2Track(title: string | null | undefined): boolean {
+  const t = normalizeTitle(title);
+  return (
+    t === "come on babe version 2" ||
+    t === "come on babe v2" ||
+    t === "come on babe (version 2 — louder)" ||
+    t === "come on babe (version 2 - louder)" ||
+    t === "come on babe v4 l2 1"
+  );
+}
+
+/** Title “Kissing” + local MP3 */
+function applyBundledKissingAudio(songs: Song[]): Song[] {
+  return songs.map((s) =>
+    isKissingBundleTrack(s.title)
+      ? {
+          ...s,
+          title: DISPLAY_TITLE_KISSING,
+          audio_url: KISSING_AUDIO_PATH,
+ 
+        
+        }
+      : s
+  );
+}
+
+/** Title “Come on babe” + local WAV */
+function applyBundledComeOnBabeAudio(songs: Song[]): Song[] {
+  return songs.map((s) =>
+    isComeOnBabeV2Track(s.title)
+      ? {
+          ...s,
+          title: DISPLAY_TITLE_COME_ON_BABE_V2,
+          audio_url: COME_ON_BABE_V2_LOUDER_AUDIO_PATH,
+        }
+        : s
+      );
+}
+
+function isRunAwayTrack(title: string | null | undefined): boolean {
+  const t = normalizeTitle(title);
+  return t === "i want to run away" || t === "i want to runaway";
+}
+
+/** Supabase rows for “I Want to Run Away” use the bundled WAV */
+function applyBundledRunAwayAudio(songs: Song[]): Song[] {
+  return songs.map((s) =>
+    isRunAwayTrack(s.title) ? { ...s, audio_url: RUN_AWAY_AUDIO_PATH } : s
+  );
+}
+
+function isRideTheNightAwayTrack(title: string | null | undefined): boolean {
+  const t = normalizeTitle(title);
+  return t === "ride the night away" || t.startsWith("ride the night away");
+}
+
+/** Supabase rows for “Ride the Night Away” use the bundled MP3 */
+function applyBundledRideTheNightAwayAudio(songs: Song[]): Song[] {
+  return songs.map((s) =>
+    isRideTheNightAwayTrack(s.title)
+      ? {
+          ...s,
+          title: "Ride the Night Away",
+          audio_url: RIDE_THE_NIGHT_AWAY_AUDIO_PATH,
+        }
+      : s
+  );
+}
+
+function isNeverBeTheSameTrack(title: string | null | undefined): boolean {
+  const t = normalizeTitle(title);
+  return t === "never be the same" || t.startsWith("never be the same");
+}
+
+/** Supabase rows for “Never Be The Same” use the bundled MP3 */
+function applyBundledNeverBeTheSameAudio(songs: Song[]): Song[] {
+  return songs.map((s) =>
+    isNeverBeTheSameTrack(s.title)
+      ? {
+          ...s,
+          title: "Never Be The Same",
+          audio_url: NEVER_BE_THE_SAME_AUDIO_PATH,
+        }
+      : s
+  );
+}
+
+function isJanieHowardTrack(title: string | null | undefined): boolean {
+  const t = normalizeTitle(title);
+  return t === "janie howard" || t.startsWith("janie howard");
+}
+
+/** Bundled longest mix voice for Janie Howard */
+function applyBundledJanieHowardAudio(songs: Song[]): Song[] {
+  return songs.map((s) =>
+    isJanieHowardTrack(s.title)
+      ? {
+          ...s,
+          title: JANIE_HOWARD_DISPLAY_TITLE,
+          audio_url: JANIE_HOWARD_AUDIO_PATH,
+        }
+      : s
+  );
+}
+
+function isGloriousDaysGirlsTrack(title: string | null | undefined): boolean {
+  const t = normalizeTitle(title);
+  return (
+    t.includes("girls singing two") ||
+    t.includes("girls singing") ||
+    t === "glorious days girls singing two" ||
+    t.startsWith("glorious days girls singing two")
+  );
+}
+
+function isGloriousDaysMaleVocalTrack(title: string | null | undefined): boolean {
+  const t = normalizeTitle(title);
+  return (
+    t.includes("male vocal") ||
+    t === "gloriousdays male vocal" ||
+    t.startsWith("gloriousdays male vocal") ||
+    t === "glorious days male vocal" ||
+    t.startsWith("glorious days male vocal")
+  );
+}
+
+function isGloriousDaysEchoesTrack(title: string | null | undefined): boolean {
+  const t = normalizeTitle(title);
+  if (isGloriousDaysGirlsTrack(title) || isGloriousDaysMaleVocalTrack(title)) {
+    return false;
+  }
+  return (
+    t.includes("echoes of the don") ||
+    t === "glorious days" ||
+    t.startsWith("glorious days")
+  );
+}
+
+function isGloriousDaysGirlsBundled(songs: Song[]): boolean {
+  return songs.some(
+    (s) =>
+      s.audio_url === GLORIOUS_DAYS_GIRLS_SINGING_TWO_AUDIO_PATH ||
+      isGloriousDaysGirlsTrack(s.title),
+  );
+}
+
+function isGloriousDaysMaleVocalBundled(songs: Song[]): boolean {
+  return songs.some(
+    (s) =>
+      s.audio_url === GLORIOUS_DAYS_MALE_VOCAL_AUDIO_PATH ||
+      isGloriousDaysMaleVocalTrack(s.title),
+  );
+}
+
+function isGloriousDaysEchoesBundled(songs: Song[]): boolean {
+  return songs.some(
+    (s) =>
+      s.audio_url === GLORIOUS_DAYS_ECHOES_OF_THE_DON_AUDIO_PATH ||
+      isGloriousDaysEchoesTrack(s.title),
+  );
+}
+
+/** Supabase rows for Glorious Days demo versions use bundled MP3s */
+function applyBundledGloriousDaysDemos(songs: Song[]): Song[] {
+  return songs.map((s) => {
+    if (isGloriousDaysGirlsTrack(s.title)) {
+      return {
+        ...s,
+        title: GLORIOUS_DAYS_GIRLS_DISPLAY_TITLE,
+        audio_url: GLORIOUS_DAYS_GIRLS_SINGING_TWO_AUDIO_PATH,
+      };
+    }
+    if (isGloriousDaysMaleVocalTrack(s.title)) {
+      return {
+        ...s,
+        title: GLORIOUS_DAYS_MALE_VOCAL_DISPLAY_TITLE,
+        audio_url: GLORIOUS_DAYS_MALE_VOCAL_AUDIO_PATH,
+      };
+    }
+    if (isGloriousDaysEchoesTrack(s.title)) {
+      return {
+        ...s,
+        title: GLORIOUS_DAYS_ECHOES_DISPLAY_TITLE,
+        audio_url: GLORIOUS_DAYS_ECHOES_OF_THE_DON_AUDIO_PATH,
+      };
+    }
+    return s;
+  });
+}
+
+function isDancingMachineFamily(title: string | null | undefined): boolean {
+  const t = normalizeTitle(title);
+  return (
+    t === "the dancing machine" ||
+    t.startsWith("the dancing machine") ||
+    t === "dancing machine" ||
+    t.startsWith("dancing machine") ||
+    t === "lily the dancing machine" ||
+    t.startsWith("lily the dancing machine")
+  );
+}
+
+function isDancingMachineRockTrack(title: string | null | undefined): boolean {
+  const t = normalizeTitle(title);
+  return isDancingMachineFamily(title) && t.includes("rock");
+}
+
+function isDancingMachineDanceTrack(
+  title: string | null | undefined,
+  desc?: string | null,
+  audioUrl?: string | null,
+): boolean {
+  const t = normalizeTitle(title);
+  const d = normalizeTitle(desc);
+  if (d === "dance version" || d.includes("dance version")) return true;
+  if (audioUrl === DANCING_MACHINE_DANCE_AUDIO_PATH) return true;
+  return (
+    (isDancingMachineFamily(title) &&
+      (t.includes("turbo club") ||
+        t.includes("club mix") ||
+        t.includes("dance version"))) ||
+    t === "dancing machine (turbo club mix)" ||
+    t.startsWith("dancing machine (turbo club mix)")
+  );
+}
+
+/** Map rock + dance Dancing Machine rows; drop legacy duplicates only */
+function applyBundledDancingMachineAudio(songs: Song[]): Song[] {
+  return songs
+    .map((s) => {
+      if (isDancingMachineRockTrack(s.title)) {
+        return {
+          ...s,
+          title: "Lily the Dancing Machine",
+          audio_url: DANCING_MACHINE_ROCK_AUDIO_PATH,
+          desc: ROCK_VERSION_LABEL,
+        };
+      }
+      if (isDancingMachineDanceTrack(s.title, s.desc, s.audio_url)) {
+        return {
+          ...s,
+          title: "Dancing Machine (Turbo Club Mix)",
+          audio_url: DANCING_MACHINE_DANCE_AUDIO_PATH,
+          desc: DANCE_VERSION_LABEL,
+        };
+      }
+      return s;
+    })
+    .filter(
+      (s) =>
+        s.audio_url !== "/audio/dancing-machine.wav" &&
+        s.audio_url !== "/audio/Dancing-Machine.mp3" &&
+        s.audio_url !== "/audio/Dancing-Machine%20.mp3" &&
+        !(
+          isDancingMachineFamily(s.title) &&
+          !isDancingMachineRockTrack(s.title) &&
+          !isDancingMachineDanceTrack(s.title, s.desc, s.audio_url)
+        ),
+    );
+}
+
+
+
+/** Ensures bundled tracks appear even when Supabase has other songs but not these yet */
+function ensureBundledTracksInList(songs: Song[]): Song[] {
+  let result = songs;
+
+  if (!result.some((s) => isRideTheNightAwayTrack(s.title))) {
+    result = [
+      {
+        id: "bundled-ride-the-night-away",
+        title: "Black Horse",
+        artist: "Shirwell Bancan",
+        desc: "Shirwell Bancan",
+        year: 2025,
+        audio_url: RIDE_THE_NIGHT_AWAY_AUDIO_PATH,
+        cover_image: null,
+        is_premium: false,
+      },
+      ...result,
+    ];
+  }
+
+  function isNeverBeTheSameTrack(title: string | null | undefined): boolean {
+    const t = normalizeTitle(title);
+    return t === "never be the same" || t.startsWith("never be the same");
+  }
+  if (!result.some((s) => isNeverBeTheSameTrack(s.title))) {
+    result = [
+      {
+        id: "bundled-never-be-the-same",
+        title: "Never Be The Same",
+        artist: "Written by Shirwell Bancan",
+        desc: "Shirwell Bancan",
+        year: 2026,
+        audio_url: NEVER_BE_THE_SAME_AUDIO_PATH,
+        cover_image: null,
+        is_premium: false,
+      },
+      ...result,
+    ];
+  }
+
+  function isOneThousandMinutesApartTrack(title: string | null | undefined): boolean {
+    const t = normalizeTitle(title);
+    return t === "1000 minutes apart" || t.startsWith("1000 minutes apart");
+  }
+  if (!result.some((s) => isOneThousandMinutesApartTrack(s.title))) {
+    result = [
+      {
+        id: "bundled-one-thousand-minutes-apart",
+        title: "1000 Minutes Apart",
+        artist: "Written by Shirwell Bancan",
+        desc: "Shirwell Bancan",
+        year: 2025,
+        audio_url: ONE_THOUSAND_MINUTES_APART_AUDIO_PATH,
+        cover_image: null,
+        is_premium: false,
+      },
+      ...result,
+    ];
+  }
+  function isRockNRollRollTrack(title: string | null | undefined): boolean {
+    const t = normalizeTitle(title);
+    return t === "rock-n-roll roll" || t.startsWith("rock-n-roll roll");
+  }
+  if (!result.some((s) => isRockNRollRollTrack(s.title))) {
+    result = [
+      {
+        id: "bundled-rock-n-roll-roll",     
+        title: "Rock-n-Roll Roll",
+        artist: "Written by Shirwell Bancan",
+        desc: "Shirwell Bancan",
+        year: 2025,
+        audio_url: ROCK_N_ROLL_ROLL_AUDIO_PATH,
+        cover_image: null,
+        is_premium: false,
+      },
+      ...result,
+    ];
+  }
+
+  function isWithoutYourLoveTrack(title: string | null | undefined): boolean {
+    const t = normalizeTitle(title);
+    return t === "without your love" || t.startsWith("without your love");
+  }
+  if (!result.some((s) => isWithoutYourLoveTrack(s.title))) {
+    result = [
+      {
+        id: "bundled-without-your-love",
+        title: "Without Your Love",
+        artist: "Written by Shirwell Bancan",
+        desc: "Shirwell Bancan",
+        year: 2025,
+        audio_url: WITHOUT_YOUR_LOVE_AUDIO_PATH,
+        cover_image: null,
+        is_premium: false,
+      },
+      ...result,
+    ];
+  }
+  function isCrazy1Track(title: string | null | undefined): boolean {
+    const t = normalizeTitle(title);
+    return t === "crazy 1" || t.startsWith("crazy 1");
+  }
+  if (!result.some((s) => isCrazy1Track(s.title))) {
+    result = [
+      {
+        id: "bundled-crazy-1",
+        title: "Crazy 1",
+        artist: "Written by Shirwell Bancan",
+        desc: "Shirwell Bancan",
+        year: 2025,
+        audio_url: CRAZY_1_AUDIO_PATH,
+        cover_image: null,
+        is_premium: false,
+      },
+      ...result,
+    ];
+  }
+
+  if (!result.some((s) => isJanieHowardTrack(s.title))) {
+    result = [
+      {
+        id: "bundled-janie-howard",
+        title: JANIE_HOWARD_DISPLAY_TITLE,
+        artist: "Written by Shirwell Bancan",
+        desc: "Shirwell Bancan",
+        year: 2025,
+        audio_url: JANIE_HOWARD_AUDIO_PATH,
+        cover_image: null,
+        is_premium: false,
+      },
+      ...result,
+    ];
+  }
+
+  function isTwoBoysTrack(title: string | null | undefined): boolean {
+    const t = normalizeTitle(title);
+    return t === "2 boys" || t.startsWith("2 boys") || t === "two boys";
+  }
+  if (!result.some((s) => isTwoBoysTrack(s.title))) {
+    result = [
+      {
+        id: "bundled-2-boys",
+        title: "2 Boys",
+        artist: "Written by Shirwell Bancan",
+        desc: "Shirwell Bancan",
+        year: 2025,
+        audio_url: TWO_BOYS_AUDIO_PATH,
+        cover_image: null,
+        is_premium: false,
+      },
+      ...result,
+    ];
+  }
+
+  function isBabyGonnaRockTrack(title: string | null | undefined): boolean {
+    const t = normalizeTitle(title);
+    return t === "Baby Gonna Rock" || t.startsWith("Baby Gonna Rock");
+  }
+  if (!result.some((s) => isBabyGonnaRockTrack(s.title))) {
+    result = [
+      {
+        id: "bundled-baby-gonna-rock",
+        title: "Baby Gonna Rock",
+        artist: "Written by Shirwell Bancan",
+        desc: "shirwell",
+          year: 2025,
+        audio_url: BABY_GONNA_ROCK_AUDIO_PATH,
+        cover_image: null,
+        is_premium: false,
+      },
+      ...result,
+    ];
+
+  }
+  function isHayGirlsGuyVoiceTrack(title: string | null | undefined): boolean {
+    const t = normalizeTitle(title);
+    return t === "hay girls guy voice" || t.startsWith("hay girls guy voice");
+  } 
+  if (!result.some((s) => isHayGirlsGuyVoiceTrack(s.title))) {
+    result = [
+      {
+        id: "bundled-hay-girls-guy-voice",
+        title: "Hay Girls Guy Voice",
+        artist: "Written by Shirwell Bancan",
+        desc: "Shirwell Bancan",
+        year: 2025,
+        audio_url: HAY_GIRLS_GUY_VOICE_AUDIO_PATH,
+        cover_image: null,
+        is_premium: false,
+      },
+      ...result,
+    ];
+  }
+
+  if (!isGloriousDaysEchoesBundled(result)) {
+    result = [
+      {
+        id: "bundled-glorious-days-echoes-of-the-don",
+        title: GLORIOUS_DAYS_ECHOES_DISPLAY_TITLE,
+        artist: "Written by Shirwell Bancan",
+        desc: DEMONSTRATION_LABEL,
+        year: 2026,
+        audio_url: GLORIOUS_DAYS_ECHOES_OF_THE_DON_AUDIO_PATH,
+        cover_image: null,
+        is_premium: false,
+      },
+      ...result,
+    ];
+  }
+
+  if (!isGloriousDaysGirlsBundled(result)) {
+    result = [
+      {
+        id: "bundled-glorious-days-girls-singing-two",
+        title: GLORIOUS_DAYS_GIRLS_DISPLAY_TITLE,
+        artist: "Written by Shirwell Bancan",
+        desc: DEMONSTRATION_LABEL,
+        year: 2026,
+        audio_url: GLORIOUS_DAYS_GIRLS_SINGING_TWO_AUDIO_PATH,
+        cover_image: null,
+        is_premium: false,
+      },
+      ...result,
+    ];
+  }
+
+  if (!isGloriousDaysMaleVocalBundled(result)) {
+    result = [
+      {
+        id: "bundled-glorious-days-male-vocal",
+        title: GLORIOUS_DAYS_MALE_VOCAL_DISPLAY_TITLE,
+        artist: "Written by Shirwell Bancan",
+        desc: DEMONSTRATION_LABEL,
+        year: 2026,
+        audio_url: GLORIOUS_DAYS_MALE_VOCAL_AUDIO_PATH,
+        cover_image: null,
+        is_premium: false,
+      },
+      ...result,
+    ];
+  }
+
+  function hasDancingMachineRockVersion(songs: Song[]) {
+    return songs.some(
+      (s) =>
+        s.audio_url === DANCING_MACHINE_ROCK_AUDIO_PATH ||
+        isDancingMachineRockTrack(s.title),
+    );
+  }
+  if (!hasDancingMachineRockVersion(result)) {
+    result = [
+      {
+        id: "bundled-dancing-machine-rock",
+        title: "Lily the Dancing Machine",
+        artist: "Written by Shirwell Bancan",
+        desc: ROCK_VERSION_LABEL,
+        year: 2025,
+        audio_url: DANCING_MACHINE_ROCK_AUDIO_PATH,
+        cover_image: null,
+        is_premium: false,
+      },
+      ...result,
+    ];
+  }
+
+  function hasDancingMachineDanceVersion(songs: Song[]) {
+    return songs.some(
+      (s) =>
+        s.audio_url === DANCING_MACHINE_DANCE_AUDIO_PATH ||
+        isDancingMachineDanceTrack(s.title, s.desc, s.audio_url),
+    );
+  }
+  if (!hasDancingMachineDanceVersion(result)) {
+    result = [
+      {
+        id: "bundled-dancing-machine-dance",
+        title: "Dancing Machine (Turbo Club Mix)",
+        artist: "Written by Shirwell Bancan",
+        desc: DANCE_VERSION_LABEL,
+        year: 2025,
+        audio_url: DANCING_MACHINE_DANCE_AUDIO_PATH,
+        cover_image: null,
+        is_premium: false,
+      },
+      ...result,
+    ];
+  }
+
+  return result;
+}

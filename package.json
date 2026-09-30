@@ -1,0 +1,42 @@
+{
+  "name": "shirwell",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "cap:sync": "cap sync",
+    "cap:android": "cap open android",
+    "cap:ios": "cap open ios"
+  },
+  "dependencies": {
+    "@capacitor-community/admob": "^7.2.0",
+    "@capacitor/core": "^7.6.8",
+    "@stripe/react-stripe-js": "^6.8.0",
+    "@stripe/stripe-js": "^9.12.0",
+    "@supabase/ssr": "^0.10.2",
+    "@supabase/supabase-js": "^2.103.3",
+    "howler": "^2.2.4",
+    "lucide-react": "^1.8.0",
+    "next": "16.2.4",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "stripe": "^17.7.0"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^7.6.0",
+    "@capacitor/cli": "^7.6.0",
+    "@capacitor/ios": "^7.6.0",
+    "@tailwindcss/postcss": "^4",
+    "@types/howler": "^2.2.12",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.4",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

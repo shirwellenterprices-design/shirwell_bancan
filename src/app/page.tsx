@@ -1,0 +1,7 @@
+import { permanentRedirect } from "next/navigation";
+import { HOME_PATH } from "@/lib/seo";
+
+/** Root URL permanently sends visitors and crawlers to the canonical home page. */
+export default function RootPage() {
+  permanentRedirect(HOME_PATH);
+}
