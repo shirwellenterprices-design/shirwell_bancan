@@ -25,6 +25,8 @@ export type StoreProduct = {
   reviewCount?: number;
   /** Portrait promo art (e.g. vinyl poster) — uses contain instead of square crop */
   imageLayout?: "square" | "portrait";
+  /** Omit from /products grid and product stories; detail page may still exist. */
+  hideFromProductsPage?: boolean;
 };
 
 export const STORE_PRODUCTS: StoreProduct[] = [
@@ -46,6 +48,7 @@ export const STORE_PRODUCTS: StoreProduct[] = [
     rating: 5,
     reviewCount: 56,
     imageLayout: "portrait",
+    hideFromProductsPage: true,
   },
   {
     slug: "honey",
@@ -109,6 +112,10 @@ export function getStoreProduct(slug: string): StoreProduct | undefined {
   return STORE_PRODUCTS.find((p) => p.slug === slug);
 }
 
+export function getProductsForProductsPage(): StoreProduct[] {
+  return STORE_PRODUCTS.filter((p) => !p.hideFromProductsPage);
+}
+
 export function formatProductPrice(product: StoreProduct): string {
   const formatted = new Intl.NumberFormat("en-AU", {
     style: "currency",
@@ -163,14 +170,15 @@ export function getProductJsonLd(product: StoreProduct): Record<string, unknown>
 }
 
 export function getProductsIndexJsonLd(): Record<string, unknown> {
+  const listed = getProductsForProductsPage();
   return {
     "@context": "https://schema.org",
     "@type": "ItemList",
     name: `${SITE_NAME} Products`,
     description: "Sample products from the Shirwell Bancan official store.",
     url: absoluteUrl("/products"),
-    numberOfItems: STORE_PRODUCTS.length,
-    itemListElement: STORE_PRODUCTS.map((product, index) => ({
+    numberOfItems: listed.length,
+    itemListElement: listed.map((product, index) => ({
       "@type": "ListItem",
       position: index + 1,
       url: absoluteUrl(getProductPagePath(product.slug)),

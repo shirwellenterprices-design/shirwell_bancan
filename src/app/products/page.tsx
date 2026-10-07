@@ -7,7 +7,7 @@ import { JsonLdScript } from "@/components/seo/json-ld-script";
 import { ProductCard } from "@/components/shirwell/product-card";
 import { StoreComingSoonNotice } from "@/components/shirwell/store-coming-soon-notice";
 import { STORE_EDITORIAL } from "@/lib/editorial-content";
-import { getProductsIndexJsonLd, STORE_PRODUCTS } from "@/lib/products";
+import { getProductsForProductsPage, getProductsIndexJsonLd } from "@/lib/products";
 import { isStoreComingSoon } from "@/config/store";
 import { SITE_NAME } from "@/lib/seo";
 
@@ -28,6 +28,8 @@ export const metadata: Metadata = {
 };
 
 export default function ProductsPage() {
+  const products = getProductsForProductsPage();
+
   return (
     <div className="page-shell relative">
       <JsonLdScript data={getProductsIndexJsonLd()} />
@@ -73,7 +75,7 @@ export default function ProductsPage() {
             Just for you
           </h2>
           <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-            {STORE_PRODUCTS.map((product) => (
+            {products.map((product) => (
               <ProductCard key={product.slug} product={product} />
             ))}
           </div>
@@ -83,7 +85,7 @@ export default function ProductsPage() {
           <h2 className="text-base font-semibold text-zinc-100 sm:text-lg">
             Product stories
           </h2>
-          {STORE_PRODUCTS.map((product) => (
+          {products.map((product) => (
             <article key={product.slug} className={`${glassCard} p-6 sm:p-8`}>
               <h3 className="font-serif text-lg font-semibold text-[#FFC107]">
                 <Link
