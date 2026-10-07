@@ -48,7 +48,6 @@ export const STORE_PRODUCTS: StoreProduct[] = [
     rating: 5,
     reviewCount: 56,
     imageLayout: "portrait",
-    hideFromProductsPage: true,
   },
   {
     slug: "honey",
